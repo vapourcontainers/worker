@@ -1,0 +1,5 @@
+{
+  "name": "@vapourcontainers-worker/client",
+  "private": true,
+  "type": "module"
+}

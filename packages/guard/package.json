@@ -1,0 +1,5 @@
+{
+  "name": "@vapourcontainers-worker/guard",
+  "private": true,
+  "type": "module"
+}
