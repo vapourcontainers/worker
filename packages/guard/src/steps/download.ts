@@ -3,7 +3,7 @@ import { pipeline } from 'node:stream/promises';
 import { createWriteStream } from 'node:fs';
 
 import OSS, { GetObjectRequest, GetObjectMetaRequest } from '@alicloud/oss20190517';
-import { ensureDir } from 'fs-extra';
+import { ensureDir, pathExists } from 'fs-extra';
 
 import crc64File from '../utils/crc64File';
 
@@ -12,6 +12,13 @@ export default async function download(source: string, output: string, oss: OSS,
   const hash = meta.headers['x-oss-hash-crc64ecma'];
 
   await ensureDir(dirname(output));
+
+  if (await pathExists(output)) {
+    const actualHash = await crc64File(output);
+    if (hash === actualHash) {
+      return;
+    }
+  }
 
   const get = await oss.getObject(bucket, source, new GetObjectRequest());
   await pipeline(get.body, createWriteStream(output));
