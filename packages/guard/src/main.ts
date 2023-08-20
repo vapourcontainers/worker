@@ -1,9 +1,6 @@
 import { parseArgs } from 'node:util';
 import { basename, dirname, join, resolve } from 'node:path';
 
-import { Config } from '@alicloud/openapi-client';
-import OSS from '@alicloud/oss20190517';
-
 import loadProject from './project';
 import {
   Stage,
@@ -11,14 +8,13 @@ import {
   updateDownloadProgress,
   updateProject,
   updateStage,
+  updateUploadProgress,
 } from './server';
 
-import download from './steps/download';
 import run from './steps/run';
-import upload from './steps/upload';
 
 import ensureArgs from './utils/ensureArgs';
-import alicloud from './utils/alicloud';
+import { download, upload, type IOssConfig } from './utils/ossutil';
 
 const args = parseArgs({
   options: {
@@ -37,13 +33,12 @@ ensureArgs(args.values, [
   'oss-bucket',
 ]);
 
-const client = new (alicloud(OSS))(new Config({
-  accessKeyId: args.values['access-key-id'],
-  accessKeySecret: args.values['access-secret'],
-  endpoint: args.values['oss-endpoint'],
-}));
-
-const bucket = args.values['oss-bucket']!;
+const oss: IOssConfig = {
+  accessKeyId: args.values['access-key-id']!,
+  accessKeySecret: args.values['access-secret']!,
+  endpoint: args.values['oss-endpoint']!,
+  bucket: args.values['oss-bucket']!,
+};
 
 const rootPath = resolve(dirname(new URL(import.meta.url).pathname), '../../../');
 const sockPath = join(rootPath, 'ws-guard.sock');
@@ -59,8 +54,8 @@ for (const [i, footage] of project.footages.entries()) {
     ? join(footage.target, basename(footage.source))
     : footage.target;
 
-  console.log(`  - ${footage.source} -> ${output}...`);
-  await download(footage.source, output, client, bucket, (bytes, totalBytes) => {
+  console.log(`  - ${footage.source} -> ${output}`);
+  await download(oss, footage.source, output, (bytes, totalBytes) => {
     updateDownloadProgress({
       fileIndex: i,
       currentBytes: bytes,
@@ -77,9 +72,16 @@ if (!target) {
 }
 await run(target.script);
 
-console.log('* Uploading output...');
+console.log(`* Uploading output...`);
 updateStage(Stage.UPLOAD);
-await upload(target.output, project.upload.prefix, client, bucket);
+console.log(`  - ${target.output} -> ${project.upload.prefix}`);
+await upload(oss, target.output, join(project.upload.prefix, basename(target.output)), (bytes, totalBytes) => {
+  updateUploadProgress({
+    fileIndex: 0,
+    currentBytes: bytes,
+    totalBytes: totalBytes,
+  });
+});
 
 console.log('* Done');
 

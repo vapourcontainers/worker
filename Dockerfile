@@ -37,10 +37,14 @@ set -eux
 echo "deb http://www.deb-multimedia.org bookworm main" >> /etc/apt/sources.list
 apt-get update -oAcquire::AllowInsecureRepositories=true
 apt-get install -y --allow-unauthenticated --no-install-recommends \
+        ca-certificates \
+        curl \
         deb-multimedia-keyring \
         ffmpeg \
+        unzip \
         vapoursynth
 rm -rf /var/lib/apt/lists/*
+curl https://gosspublic.alicdn.com/ossutil/install.sh | bash
 EOF
 
 WORKDIR /app
