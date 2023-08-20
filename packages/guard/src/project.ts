@@ -8,6 +8,7 @@ export default async function loadProject(path = 'project.yml'): Promise<IProjec
 export interface IProject {
   footages: IFootage[];
   targets: ITarget[];
+  upload: IUpload;
 }
 
 export interface IFootage {
@@ -18,4 +19,8 @@ export interface IFootage {
 export interface ITarget {
   script: string;
   output: string;
+}
+
+export interface IUpload {
+  prefix: string;
 }

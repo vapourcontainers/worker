@@ -7,6 +7,7 @@ import OSS from '@alicloud/oss20190517';
 import loadProject from './project';
 import download from './steps/download';
 import run from './steps/run';
+import upload from './steps/upload';
 
 import ensureArgs from './utils/ensureArgs';
 import alicloud from './utils/alicloud';
@@ -54,3 +55,10 @@ if (!target) {
   throw new Error(`Cannot find script: ${args.positionals[0]}`);
 }
 await run(target.script);
+
+console.log('* Uploading output...');
+await upload(target.output, project.upload.prefix, client, bucket);
+
+console.log('* Done');
+
+process.exit(0);
