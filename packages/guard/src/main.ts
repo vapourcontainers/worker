@@ -6,6 +6,7 @@ import OSS from '@alicloud/oss20190517';
 
 import loadProject from './project';
 import download from './steps/download';
+import run from './steps/run';
 
 import ensureArgs from './utils/ensureArgs';
 import alicloud from './utils/alicloud';
@@ -46,3 +47,10 @@ for (const footage of project.footages) {
   console.log(`  - ${footage.source} -> ${output}...`);
   await download(footage.source, output, client, bucket);
 }
+
+console.log('* Run script');
+const target = project.targets.find((target) => target.script === args.positionals[0]);
+if (!target) {
+  throw new Error(`Cannot find script: ${args.positionals[0]}`);
+}
+await run(target.script);
