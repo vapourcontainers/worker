@@ -3,7 +3,7 @@ import { createInterface } from 'node:readline';
 import fs from 'fs-extra';
 import { execa } from 'execa';
 
-import { ITaskFormat, ITaskProgress } from '../task';
+import { updateFormat, type ITaskFormat, type ITaskProgress, updateProgress } from '../server';
 
 export default async function run(script: string): Promise<void> {
   if (!await fs.pathExists(script)) {
@@ -67,7 +67,7 @@ export default async function run(script: string): Promise<void> {
       case RunStage.VSPIPE_PIPE: {
         console.log(`  ${line}`);
 
-        console.dir({ format });
+        updateFormat(format as ITaskFormat);
 
         if (line.startsWith('+ ffmpeg')) {
           stage = RunStage.FFMPEG;
@@ -94,7 +94,7 @@ export default async function run(script: string): Promise<void> {
           } else if (k == 'speed') {
             progress.speed = parseFloat(v);
           } else if (k == 'progress') {
-            console.dir({ progress });
+            updateProgress(progress as ITaskProgress);
           }
         } else {
           console.log(`  ${line}`);

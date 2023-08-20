@@ -1,10 +1,12 @@
 import { parseArgs } from 'node:util';
-import { basename, join } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 
 import { Config } from '@alicloud/openapi-client';
 import OSS from '@alicloud/oss20190517';
 
 import loadProject from './project';
+import { Stage, createSocketServer, updateStage } from './server';
+
 import download from './steps/download';
 import run from './steps/run';
 import upload from './steps/upload';
@@ -37,9 +39,14 @@ const client = new (alicloud(OSS))(new Config({
 
 const bucket = args.values['oss-bucket']!;
 
+const rootPath = resolve(dirname(new URL(import.meta.url).pathname), '../../../');
+const sockPath = join(rootPath, 'ws-guard.sock');
+const server = await createSocketServer(sockPath);
+
 const project = await loadProject();
 
 console.log('* Downloading footages...');
+updateStage(Stage.DOWNLOAD);
 for (const footage of project.footages) {
   const output = footage.target.endsWith('/')
     ? join(footage.target, basename(footage.source))
@@ -50,6 +57,7 @@ for (const footage of project.footages) {
 }
 
 console.log('* Run script');
+updateStage(Stage.ENCODE);
 const target = project.targets.find((target) => target.script === args.positionals[0]);
 if (!target) {
   throw new Error(`Cannot find script: ${args.positionals[0]}`);
@@ -57,8 +65,10 @@ if (!target) {
 await run(target.script);
 
 console.log('* Uploading output...');
+updateStage(Stage.UPLOAD);
 await upload(target.output, project.upload.prefix, client, bucket);
 
 console.log('* Done');
 
+server.close();
 process.exit(0);
