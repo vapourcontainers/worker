@@ -4,11 +4,19 @@ import { promisify } from 'node:util';
 import { WebSocketServer } from 'ws';
 import { pathExists, remove } from 'fs-extra';
 
+import type { IProject } from './project';
+
 export enum Stage {
   IDLE = 'idle',
   DOWNLOAD = 'download',
   ENCODE = 'encode',
   UPLOAD = 'upload',
+}
+
+export interface IFileProgress {
+  fileIndex: number;
+  currentBytes: number;
+  totalBytes: number;
 }
 
 export interface ITaskFormat {
@@ -36,6 +44,9 @@ export interface ITaskProgress {
 let wss: WebSocketServer | undefined;
 
 let stage = Stage.IDLE;
+let project: IProject | undefined;
+let downloadProgress: IFileProgress | undefined;
+let uploadProgress: IFileProgress | undefined;
 let format: ITaskFormat | undefined;
 let progress: ITaskProgress | undefined;
 
@@ -53,6 +64,15 @@ export async function createSocketServer(path = '/var/run/vc-guard.sock') {
       switch (event?.name) {
         case 'stage': {
           socket.send(buildEvent('stage', stage));
+        } break;
+        case 'project': {
+          socket.send(buildEvent('project', project));
+        } break;
+        case 'download-progress': {
+          socket.send(buildEvent('download-progress', downloadProgress));
+        } break;
+        case 'upload-progress': {
+          socket.send(buildEvent('upload-progress', uploadProgress));
         } break;
         case 'format': {
           socket.send(buildEvent('format', format));
@@ -101,6 +121,21 @@ function broadcast(name: string, data?: unknown) {
 export function updateStage(value: Stage) {
   stage = value;
   broadcast('stage', stage);
+}
+
+export function updateProject(value: IProject) {
+  project = value;
+  broadcast('project', project);
+}
+
+export function updateDownloadProgress(value: IFileProgress) {
+  downloadProgress = value;
+  broadcast('download-progress', downloadProgress);
+}
+
+export function updateUploadProgress(value: IFileProgress) {
+  uploadProgress = value;
+  broadcast('upload-progress', uploadProgress);
 }
 
 export function updateFormat(value: ITaskFormat) {

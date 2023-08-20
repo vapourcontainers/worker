@@ -5,7 +5,13 @@ import { Config } from '@alicloud/openapi-client';
 import OSS from '@alicloud/oss20190517';
 
 import loadProject from './project';
-import { Stage, createSocketServer, updateStage } from './server';
+import {
+  Stage,
+  createSocketServer,
+  updateDownloadProgress,
+  updateProject,
+  updateStage,
+} from './server';
 
 import download from './steps/download';
 import run from './steps/run';
@@ -44,16 +50,23 @@ const sockPath = join(rootPath, 'ws-guard.sock');
 const server = await createSocketServer(sockPath);
 
 const project = await loadProject();
+updateProject(project);
 
 console.log('* Downloading footages...');
 updateStage(Stage.DOWNLOAD);
-for (const footage of project.footages) {
+for (const [i, footage] of project.footages.entries()) {
   const output = footage.target.endsWith('/')
     ? join(footage.target, basename(footage.source))
     : footage.target;
 
   console.log(`  - ${footage.source} -> ${output}...`);
-  await download(footage.source, output, client, bucket);
+  await download(footage.source, output, client, bucket, (bytes, totalBytes) => {
+    updateDownloadProgress({
+      fileIndex: i,
+      currentBytes: bytes,
+      totalBytes: totalBytes,
+    });
+  });
 }
 
 console.log('* Run script');
