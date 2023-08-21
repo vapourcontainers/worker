@@ -50,7 +50,7 @@ export default async function run(script: string): Promise<void> {
           format.height = parseInt(match[1]!);
         } else if (match = line.match(/^Frames: (\d+)$/)) {
           format.frames = parseInt(match[1]!);
-        } else if (match = line.match(/^FPS: (\d+)\/(\d+)$/)) {
+        } else if (match = line.match(/^FPS: (\d+)\/(\d+)/)) {
           format.fps = {
             numerator: parseInt(match[1]!),
             denominator: parseInt(match[2]!),
@@ -88,7 +88,7 @@ export default async function run(script: string): Promise<void> {
           } else if (k == 'fps') {
             progress.fps = parseFloat(v);
           } else if (k == 'bitrate') {
-            progress.currentBitrate = parseFloat(v);
+            progress.currentBitrate = parseFloat(v) * 1024;
           } else if (k == 'total_size') {
             progress.outputBytes = parseInt(v);
           } else if (k == 'speed') {
