@@ -94,6 +94,9 @@ export default async function run(script: string): Promise<void> {
           } else if (k == 'speed') {
             progress.speed = parseFloat(v);
           } else if (k == 'progress') {
+            if (progress.processedDurationMs! < 0 || isNaN(progress.speed!)) {
+              continue;
+            }
             updateProgress(progress as ITaskProgress);
           }
         } else {
