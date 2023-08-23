@@ -5,16 +5,16 @@ import loadProject from './project';
 import {
   Stage,
   createSocketServer,
-  updateDownloadProgress,
   updateProject,
   updateStage,
-  updateUploadProgress,
 } from './server';
 
+import download from './steps/download';
 import run from './steps/run';
+import upload from './steps/upload';
 
 import ensureArgs from './utils/ensureArgs';
-import { download, upload, type IOssConfig } from './utils/ossutil';
+import type { IOssConfig } from './utils/ossutil';
 
 const args = parseArgs({
   options: {
@@ -55,13 +55,7 @@ for (const [i, footage] of project.footages.entries()) {
     : footage.target;
 
   console.log(`  - ${footage.source} -> ${output}`);
-  await download(oss, footage.source, output, (bytes, totalBytes) => {
-    updateDownloadProgress({
-      fileIndex: i,
-      currentBytes: bytes,
-      totalBytes: totalBytes,
-    });
-  });
+  await download(oss, i, footage.source, output);
 }
 
 console.log('* Run script');
@@ -75,13 +69,7 @@ await run(target.script);
 console.log(`* Uploading output...`);
 updateStage(Stage.UPLOAD);
 console.log(`  - ${target.output} -> ${project.upload.prefix}`);
-await upload(oss, target.output, join(project.upload.prefix, basename(target.output)), (bytes, totalBytes) => {
-  updateUploadProgress({
-    fileIndex: 0,
-    currentBytes: bytes,
-    totalBytes: totalBytes,
-  });
-});
+await upload(oss, target.output, join(project.upload.prefix, basename(target.output)));
 
 console.log('* Done');
 
